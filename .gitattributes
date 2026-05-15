@@ -1,0 +1,7 @@
+# Auto-detect text files
+* text=auto eol=lf
+
+# Binary files
+*.exe binary
+*.dll binary
+*.pdb binary

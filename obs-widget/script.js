@@ -1,0 +1,1 @@
+// ZeroTicker view — placeholder
