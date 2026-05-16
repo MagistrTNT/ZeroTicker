@@ -2,45 +2,57 @@
 
 ## Repo state
 
-- **Pre-implementation.** No code exists yet. Only `Идея.md` (Russian) as the spec.
-- Empty git repo (no commits, no branches). First task: scaffold the project structure.
+- **Core implemented.** `src/ZeroTicker/` — C# .NET 10 Native AOT console app.
+- **View pending.** `obs-widget/` — HTML/CSS/JS OBS widget (not yet implemented).
+- Git branches: `main` (scaffold) + `dev` (active development).
 
 ## Architecture
 
-Two independent parts:
-
 | Part | Stack | Entry |
 |------|-------|-------|
-| **Core** | C# .NET console app with Native AOT | `src/MagistrTicker.Core/Program.cs` |
+| **Core** | C# .NET console app with Native AOT | `src/ZeroTicker/Program.cs` |
 | **View** | HTML/CSS/JS OBS widget | `obs-widget/index.html` |
 
 Core generates `obs-widget/data.js` — View hot-reloads it via `<script>` tag replacement.
 
-## Key technical decisions (from `Идея.md`)
+## Key technical decisions
 
-- **.NET 10** SDK is installed (the plan says 8/9 — update `.csproj` target to `net10.0`).
-- Native AOT: `<PublishAot>true</PublishAot>`, `<OptimizationPreference>Size</OptimizationPreference>`, `<TrimMode>full</TrimMode>`.
-- `System.Text.Json` (not Newtonsoft), `System.ServiceModel.Syndication` for RSS.
-- Single static `HttpClient` (or `IHttpClientFactory`).
-- Atomic file writes: write to `.tmp` → rename to target.
-- `PeriodicTimer` for worker loop (10 min default interval).
-- `animation-duration` calculated in JS from text width so scroll speed is constant.
+- **.NET 10**, Native AOT: `<PublishAot>true</PublishAot>`, `<OptimizationPreference>Size</OptimizationPreference>`, `<TrimMode>full</TrimMode>`.
+- **RSS parsing** via `XDocument` (AOT-safe, avoids `System.ServiceModel.Syndication` trimming issues).
+- **Config** via `System.Text.Json` source generators (AOT-safe).
+- Single static `HttpClient` with 15s timeout.
+- Atomic file writes: `.tmp` → rename, auto-creates parent directory.
+- `PeriodicTimer` for worker loop (configurable interval, default 10 min).
+
+## Files
+
+| File | Responsibility |
+|------|---------------|
+| `Program.cs` | Entry point, config search (CWD → `src/ZeroTicker/` → exe dir) |
+| `RssService.cs` | `FetchAllAsync()` — fetches all URLs, `XDocument` RSS 2.0 parsing, per-feed try/catch |
+| `Worker.cs` | `PeriodicTimer` loop, format → `RssOutput` → `FilePublisher` |
+| `FilePublisher.cs` | Atomic write with `Directory.CreateDirectory` |
+| `TickerConfig.cs` | Config model + `Load()` with source-gen context |
+| `RssOutput.cs` | Output model: `{ text, timestamp, sources }` |
 
 ## Commands
 
 ```powershell
-# Build + Publish (AOT, size-optimized)
-dotnet publish src/MagistrTicker.Core -c Release
+# Run (works from repo root or project dir)
+dotnet run --project src/ZeroTicker
 
-# Run (debug)
-dotnet run --project src/MagistrTicker.Core
+# Build + AOT publish
+dotnet publish src/ZeroTicker -c Release
+
+# Run from project directory directly
+cd src/ZeroTicker && dotnet run -c Release
 ```
 
 No test/lint infrastructure exists yet — add when needed.
 
 ## Conventions
 
-- Core outputs to `obs-widget/data.js` by default (configurable via `appsettings.json`).
+- Core outputs to `obs-widget/data.js` (configurable via `appsettings.json` as `OutputPath`).
 - Keep Core binary under 20 MB RAM — avoid heavy dependencies.
-- Use `will-change: transform` and GPU-accelerated CSS for ticker scroll.
-- View must work as an OBS Browser Source (no reload, seamless loop).
+- `obs-widget/data.js` is in `.gitignore` — generated artifact.
+- All changes go to `dev` branch — merge to `main` only for releases.
