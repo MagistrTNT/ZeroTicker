@@ -6,7 +6,24 @@ namespace ZeroTicker;
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(TickerConfig))]
 [JsonSerializable(typeof(RssOutput))]
+[JsonSerializable(typeof(ViewConfig))]
 internal partial class TickerJsonContext : JsonSerializerContext { }
+
+public record ViewConfig
+{
+    [JsonPropertyName("position")]
+    public string Position { get; init; } = "top";
+    [JsonPropertyName("speed")]
+    public int Speed { get; init; } = 60;
+    [JsonPropertyName("height")]
+    public int Height { get; init; } = 40;
+    [JsonPropertyName("fontSize")]
+    public int FontSize { get; init; } = 16;
+    [JsonPropertyName("color")]
+    public string Color { get; init; } = "#ffd700";
+    [JsonPropertyName("background")]
+    public string Background { get; init; } = "rgba(0,0,0,0.88)";
+}
 
 public record RssOutput
 {
@@ -16,6 +33,8 @@ public record RssOutput
     public string Timestamp { get; init; } = "";
     [JsonPropertyName("sources")]
     public string[] Sources { get; init; } = [];
+    [JsonPropertyName("config")]
+    public ViewConfig WidgetConfig { get; init; } = new();
 }
 
 public record TickerConfig
@@ -24,7 +43,8 @@ public record TickerConfig
     public int IntervalMinutes { get; init; } = 10;
     public int MaxItems { get; init; } = 30;
     public string Separator { get; init; } = " ⛤ ";
-    public string OutputPath { get; init; } = "obs-widget/data.js";
+    public string OutputPath { get; init; } = "data.js";
+    public ViewConfig? ViewConfig { get; init; }
 
     public static TickerConfig Load(string path)
     {

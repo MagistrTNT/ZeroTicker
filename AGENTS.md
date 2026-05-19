@@ -3,7 +3,7 @@
 ## Repo state
 
 - **Core implemented.** `src/ZeroTicker/` — C# .NET 10 Native AOT console app.
-- **View pending.** `obs-widget/` — HTML/CSS/JS OBS widget (not yet implemented).
+- **View implemented.** Flat-release structure: `index.html` + `style.css` + `script.js` at repo root.
 - Git branches: `main` (scaffold) + `dev` (active development).
 
 ## Architecture
@@ -11,9 +11,9 @@
 | Part | Stack | Entry |
 |------|-------|-------|
 | **Core** | C# .NET console app with Native AOT | `src/ZeroTicker/Program.cs` |
-| **View** | HTML/CSS/JS OBS widget | `obs-widget/index.html` |
+| **View** | HTML/CSS/JS OBS widget | `index.html` |
 
-Core generates `obs-widget/data.js` — View hot-reloads it via `<script>` tag replacement.
+Core generates `data.js` — View hot-reloads it via `<script>` tag replacement.
 
 ## Key technical decisions
 
@@ -23,6 +23,7 @@ Core generates `obs-widget/data.js` — View hot-reloads it via `<script>` tag r
 - Single static `HttpClient` with 15s timeout.
 - Atomic file writes: `.tmp` → rename, auto-creates parent directory.
 - `PeriodicTimer` for worker loop (configurable interval, default 10 min).
+- View config (`position`, `speed`, `height`, `color`, etc.) is part of `appsettings.json` → passed through `data.js`.
 
 ## Files
 
@@ -32,8 +33,10 @@ Core generates `obs-widget/data.js` — View hot-reloads it via `<script>` tag r
 | `RssService.cs` | `FetchAllAsync()` — fetches all URLs, `XDocument` RSS 2.0 parsing, per-feed try/catch |
 | `Worker.cs` | `PeriodicTimer` loop, format → `RssOutput` → `FilePublisher` |
 | `FilePublisher.cs` | Atomic write with `Directory.CreateDirectory` |
-| `TickerConfig.cs` | Config model + `Load()` with source-gen context |
-| `RssOutput.cs` | Output model: `{ text, timestamp, sources }` |
+| `TickerConfig.cs` | Config model + `Load()` with source-gen context. Includes `ViewConfig` |
+| `index.html` | Minimal OBS Browser Source entry |
+| `style.css` | Base ticker styles + `@keyframes ticker-scroll`. Configurable props set via JS inline |
+| `script.js` | Seamless scroll loop, dynamic speed, hot-reload of `data.js` every 60s, reads `rssData.config` |
 
 ## Commands
 
@@ -52,7 +55,7 @@ No test/lint infrastructure exists yet — add when needed.
 
 ## Conventions
 
-- Core outputs to `obs-widget/data.js` (configurable via `appsettings.json` as `OutputPath`).
+- Core outputs to `data.js` (configurable via `appsettings.json` as `OutputPath`). For dev from repo root uses `../../data.js`.
 - Keep Core binary under 20 MB RAM — avoid heavy dependencies.
-- `obs-widget/data.js` is in `.gitignore` — generated artifact.
+- `data.js` is in `.gitignore` — generated artifact.
 - All changes go to `dev` branch — merge to `main` only for releases.
