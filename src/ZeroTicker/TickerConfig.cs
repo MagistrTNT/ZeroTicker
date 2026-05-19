@@ -19,10 +19,20 @@ public record ViewConfig
     public int Height { get; init; } = 40;
     [JsonPropertyName("fontSize")]
     public int FontSize { get; init; } = 16;
+    [JsonPropertyName("fontFamily")]
+    public string FontFamily { get; init; } = "Verdana, 'Segoe UI', system-ui, sans-serif";
+    [JsonPropertyName("fontWeight")]
+    public int FontWeight { get; init; } = 400;
+    [JsonPropertyName("letterSpacing")]
+    public double LetterSpacing { get; init; } = 0;
+    [JsonPropertyName("textTransform")]
+    public string TextTransform { get; init; } = "none";
     [JsonPropertyName("color")]
     public string Color { get; init; } = "#ffd700";
     [JsonPropertyName("background")]
     public string Background { get; init; } = "rgba(0,0,0,0.88)";
+    [JsonPropertyName("gradientWidth")]
+    public int GradientWidth { get; init; } = 60;
 }
 
 public record RssOutput

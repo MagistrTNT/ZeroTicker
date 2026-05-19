@@ -4,7 +4,7 @@ namespace ZeroTicker;
 
 public static class Worker
 {
-    public static async Task RunAsync(TickerConfig config, CancellationToken ct)
+    public static async Task RunAsync(TickerConfig config, string configPath, CancellationToken ct)
     {
         using var timer = new PeriodicTimer(TimeSpan.FromMinutes(config.IntervalMinutes));
 
@@ -15,6 +15,8 @@ public static class Worker
             var now = DateTime.UtcNow;
             try
             {
+                config = TickerConfig.Load(configPath);
+
                 var items = await RssService.FetchAllAsync(config.RssUrls, config.MaxItems, ct);
 
                 var output = new RssOutput

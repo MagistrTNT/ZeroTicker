@@ -19,7 +19,7 @@ try
 {
     var config = TickerConfig.Load(configPath);
     Console.WriteLine("ZeroTicker started");
-    await Worker.RunAsync(config, CancellationToken.None);
+    await Worker.RunAsync(config, configPath, CancellationToken.None);
 }
 catch (Exception ex)
 {

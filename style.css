@@ -1,18 +1,12 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: transparent; overflow: hidden; }
 
-@keyframes ticker-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
 #ticker {
   position: fixed;
   left: 0;
   width: 100%;
   overflow: hidden;
   white-space: nowrap;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   z-index: 100;
 }
 
@@ -22,13 +16,6 @@ body { background: transparent; overflow: hidden; }
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 60px;
   z-index: 1;
   pointer-events: none;
-}
-
-#ticker-roller {
-  display: inline-block;
-  white-space: nowrap;
-  will-change: transform;
 }
