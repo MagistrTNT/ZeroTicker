@@ -17,11 +17,9 @@ public static class RssService
     }
 
     public static async Task<List<(string Title, string Source)>> FetchAllAsync(
-        string[] urls, int maxItems, CancellationToken ct)
+        string[] urls, int maxItems, string separator, CancellationToken ct)
     {
         var headlines = new List<(string Title, string Source)>();
-
-        var perFeed = maxItems / urls.Length + 1;
 
         foreach (var url in urls)
         {
@@ -35,27 +33,24 @@ public static class RssService
                 var sourceName = doc.Descendants(ns + "channel")
                     .Elements(ns + "title").FirstOrDefault()?.Value ?? url;
 
+                var firstTitle = "";
                 var feedCount = 0;
-                var feedTitles = new List<string>();
                 foreach (var item in doc.Descendants(ns + "item"))
                 {
-                    if (feedCount >= perFeed) break;
+                    if (feedCount >= maxItems) break;
                     var title = WebUtility.HtmlDecode(
                         item.Element(ns + "title")?.Value?.Trim());
                     if (!string.IsNullOrEmpty(title))
                     {
                         headlines.Add((title, sourceName));
-                        feedTitles.Add(title);
+                        if (feedCount == 0) firstTitle = title;
                         feedCount++;
                     }
                 }
 
+                var truncated = firstTitle.Length <= 80 ? firstTitle : firstTitle[..77] + "...";
                 Console.WriteLine("[{0:HH:mm:ss}] {1}: {2} items", DateTime.Now, sourceName, feedCount);
-                foreach (var t in feedTitles)
-                {
-                    var truncated = t.Length <= 80 ? t : t[..77] + "...";
-                    Console.WriteLine("  · {0}", truncated);
-                }
+                Console.WriteLine("   {0} {1}", separator, truncated);
             }
             catch (HttpRequestException ex)
             {
@@ -71,6 +66,6 @@ public static class RssService
             }
         }
 
-        return headlines.Take(maxItems).ToList();
+        return headlines;
     }
 }
