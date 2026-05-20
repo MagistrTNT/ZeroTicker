@@ -36,6 +36,7 @@ public static class RssService
                     .Elements(ns + "title").FirstOrDefault()?.Value ?? url;
 
                 var feedCount = 0;
+                var feedTitles = new List<string>();
                 foreach (var item in doc.Descendants(ns + "item"))
                 {
                     if (feedCount >= perFeed) break;
@@ -44,21 +45,29 @@ public static class RssService
                     if (!string.IsNullOrEmpty(title))
                     {
                         headlines.Add((title, sourceName));
+                        feedTitles.Add(title);
                         feedCount++;
                     }
+                }
+
+                Console.WriteLine("[{0:HH:mm:ss}] {1}: {2} items", DateTime.Now, sourceName, feedCount);
+                foreach (var t in feedTitles)
+                {
+                    var truncated = t.Length <= 80 ? t : t[..77] + "...";
+                    Console.WriteLine("  · {0}", truncated);
                 }
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"  [warn] Network error: {url} — {ex.Message}");
+                Console.WriteLine("[{0:HH:mm:ss}] [warn] Network error: {1} — {2}", DateTime.Now, url, ex.Message);
             }
             catch (XmlException ex)
             {
-                Console.WriteLine($"  [warn] XML error: {url} — {ex.Message}");
+                Console.WriteLine("[{0:HH:mm:ss}] [warn] XML error: {1} — {2}", DateTime.Now, url, ex.Message);
             }
             catch (TaskCanceledException)
             {
-                Console.WriteLine($"  [warn] Timeout: {url}");
+                Console.WriteLine("[{0:HH:mm:ss}] [warn] Timeout: {1}", DateTime.Now, url);
             }
         }
 

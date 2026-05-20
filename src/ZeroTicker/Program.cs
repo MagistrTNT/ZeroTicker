@@ -16,7 +16,7 @@ if (configPath is null)
     return;
 }
 
-Console.WriteLine("ZeroTicker started (config: {0})", configPath);
+Console.WriteLine("[{0:HH:mm:ss}] ZeroTicker started (config: {1})", DateTime.Now, configPath);
 
 var watcherCts = new CancellationTokenSource();
 configPath = Path.GetFullPath(configPath);
@@ -36,10 +36,10 @@ watcher.Renamed += ConfigChanged;
 
 void ConfigChanged(object s, FileSystemEventArgs e)
 {
-    var now = DateTime.UtcNow;
+    var now = DateTime.Now;
     if ((now - lastChange).TotalMilliseconds < 500) return;
     lastChange = now;
-    Console.WriteLine("  [config] appsettings.json changed, restarting worker...");
+    Console.WriteLine("[{0:HH:mm:ss}] [config] appsettings.json changed, restarting worker...", now);
     watcherCts.Cancel();
 }
 
