@@ -1,6 +1,6 @@
 window.tickerConfig = {
   position: 'top',
-  speed: 90,
+  speed: 120,
   fontSize: 40,
   fontFamily: "Verdana, 'Segoe UI', system-ui, sans-serif",
   fontWeight: 700,

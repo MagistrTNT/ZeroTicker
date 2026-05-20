@@ -75,7 +75,7 @@
     lastTime = now;
     scrollPos -= pxPerSec * dt / 1000;
     if (scrollPos <= -textWidth) scrollPos += textWidth;
-    roller.style.transform = 'translate3d(' + Math.round(scrollPos) + 'px, 0, 0)';
+    roller.style.transform = 'translate3d(' + scrollPos + 'px, 0, 0)';
     animId = requestAnimationFrame(tick);
   }
 
