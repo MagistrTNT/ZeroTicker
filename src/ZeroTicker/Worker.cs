@@ -23,8 +23,7 @@ public static class Worker
                 {
                     Text = string.Join(config.Separator, items.Select(i => i.Title)),
                     Timestamp = now.ToString("O"),
-                    Sources = items.Select(i => i.Source).Distinct().ToArray(),
-                    WidgetConfig = config.ViewConfig ?? new()
+                    Sources = items.Select(i => i.Source).Distinct().ToArray()
                 };
 
                 var js = "window.rssData = " +
