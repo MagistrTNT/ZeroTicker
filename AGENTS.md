@@ -44,7 +44,7 @@ Core generates `data.js` — View hot-reloads it via `<script>` tag replacement.
 # Run (works from repo root or project dir)
 dotnet run --project src/ZeroTicker
 
-# Build + AOT publish
+# Build + AOT publish (requires VS C++ workload)
 dotnet publish src/ZeroTicker -c Release
 
 # Run from project directory directly
@@ -59,3 +59,33 @@ No test/lint infrastructure exists yet — add when needed.
 - Keep Core binary under 20 MB RAM — avoid heavy dependencies.
 - `data.js` is in `.gitignore` — generated artifact.
 - All changes go to `dev` branch — merge to `main` only for releases.
+
+## Release deployment
+
+`release/` is a portable drop-in folder. **Zero DLLs — single native AOT binary.**
+
+### Structure
+
+```
+release/
+  ZeroTicker.exe     (6-8 MB — native AOT, self-contained)
+  appsettings.json   (OutputPath: "data.js" — flat path)
+  index.html         (OBS Browser Source)
+  style.css
+  script.js
+  data.js            (generated on first run, gitignored)
+```
+
+### How to update release after code changes
+
+```powershell
+dotnet publish src\ZeroTicker -c Release
+Copy-Item src\ZeroTicker\bin\Release\net10.0\win-x64\publish\ZeroTicker.exe release\
+```
+
+Assumes `release\appsettings.json` has `"OutputPath": "data.js"` (flat, not `../../data.js` as used for dev from repo root).
+
+### Prerequisites
+
+Native AOT requires the **Desktop development with C++** workload in Visual Studio.  
+Without it, `dotnet publish` fails with `Platform linker not found`.

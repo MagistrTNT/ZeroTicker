@@ -21,9 +21,10 @@ public static class RssService
     {
         var headlines = new List<(string Title, string Source)>();
 
+        var perFeed = maxItems / urls.Length + 1;
+
         foreach (var url in urls)
         {
-            if (headlines.Count >= maxItems) break;
             try
             {
                 var xml = await Client.GetStringAsync(url, ct);
@@ -34,13 +35,17 @@ public static class RssService
                 var sourceName = doc.Descendants(ns + "channel")
                     .Elements(ns + "title").FirstOrDefault()?.Value ?? url;
 
+                var feedCount = 0;
                 foreach (var item in doc.Descendants(ns + "item"))
                 {
-                    if (headlines.Count >= maxItems) break;
+                    if (feedCount >= perFeed) break;
                     var title = WebUtility.HtmlDecode(
                         item.Element(ns + "title")?.Value?.Trim());
                     if (!string.IsNullOrEmpty(title))
+                    {
                         headlines.Add((title, sourceName));
+                        feedCount++;
+                    }
                 }
             }
             catch (HttpRequestException ex)
@@ -57,6 +62,6 @@ public static class RssService
             }
         }
 
-        return headlines;
+        return headlines.Take(maxItems).ToList();
     }
 }
