@@ -1,20 +1,8 @@
 (function () {
   'use strict';
 
-  var DEFAULTS = {
-    position: 'top',
-    speed: 120,
-    fontSize: 30,
-    fontFamily: "Verdana, 'Segoe UI', system-ui, sans-serif",
-    fontWeight: 700,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    color: '#e0f7fa',
-    background: 'rgba(0,0,0,0.5)',
-    gradientWidth: 60
-  };
-
   var REFRESH_MS = 60000;
+  var DATA_URL = 'news.js?_=' + Date.now();
 
   var ticker = document.getElementById('ticker');
   if (!ticker) return;
@@ -38,13 +26,14 @@
   var animId = null;
   var scrollPos = 0;
   var textWidth = 0;
-  var pxPerSec = DEFAULTS.speed;
+  var pxPerSec = 60;
   var lastTime = 0;
   var currentCfg = {};
 
   function applyConfig(cfg) {
+    if (!cfg) return;
     currentCfg = cfg;
-    pxPerSec = cfg.speed || DEFAULTS.speed;
+    pxPerSec = cfg.speed || 60;
     ticker.style.top = cfg.position === 'top' ? '0' : 'auto';
     ticker.style.bottom = cfg.position === 'top' ? 'auto' : '0';
     ticker.style.height = 'auto';
@@ -74,8 +63,7 @@
     }
   }
 
-  function applyText(text, cfg) {
-    applyConfig(cfg || currentCfg || DEFAULTS);
+  function applyText(text) {
     spanA.textContent = text;
     spanB.textContent = text;
     measureAndStart();
@@ -96,27 +84,27 @@
     if (prev) prev.remove();
     var s = document.createElement('script');
     s.setAttribute('data-ticker', '');
-    s.src = 'data.js?_=' + Date.now();
+    s.src = DATA_URL;
     s.onload = function () { if (window.rssData) cb(window.rssData); };
     document.body.appendChild(s);
   }
 
-  loadData(function (d) {
-    var cfg = d.config || DEFAULTS;
-    if (d.text) applyText(d.text, cfg);
-  });
+  function init() {
+    applyConfig(window.tickerConfig);
+    loadData(function (d) {
+      if (d && d.text) applyText(d.text);
+    });
+  }
+
+  init();
 
   setInterval(function () {
+    var cfgChanged = window.tickerConfig && JSON.stringify(window.tickerConfig) !== JSON.stringify(currentCfg);
+    if (cfgChanged) applyConfig(window.tickerConfig);
+
     loadData(function (d) {
       if (!d || !d.text) return;
-      var cfg = d.config || DEFAULTS;
-      var textChanged = d.text !== spanA.textContent;
-      var cfgChanged = JSON.stringify(cfg) !== JSON.stringify(currentCfg);
-      if (textChanged) {
-        applyText(d.text, cfg);
-      } else if (cfgChanged) {
-        applyConfig(cfg);
-      }
+      if (d.text !== spanA.textContent) applyText(d.text);
     });
   }, REFRESH_MS);
 })();
