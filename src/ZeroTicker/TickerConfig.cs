@@ -23,6 +23,7 @@ public record TickerConfig
     public string[] RssUrls { get; init; } = [];
     public int IntervalMinutes { get; init; } = 10;
     public int MaxPerSource { get; init; } = 15;
+    public int MaxAgeMinutes { get; init; } = 0;
     public string Separator { get; init; } = " ⛤ ";
     public string OutputPath { get; init; } = "news.js";
 

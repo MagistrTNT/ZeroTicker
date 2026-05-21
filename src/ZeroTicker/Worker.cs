@@ -17,7 +17,7 @@ public static class Worker
             {
                 config = TickerConfig.Load(configPath);
 
-                var items = await RssService.FetchAllAsync(config.RssUrls, config.MaxPerSource, config.Separator, ct);
+                var items = await RssService.FetchAllAsync(config.RssUrls, config.MaxPerSource, config.Separator, config.MaxAgeMinutes, ct);
 
                 var output = new RssOutput
                 {
