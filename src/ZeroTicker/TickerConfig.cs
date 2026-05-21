@@ -6,6 +6,7 @@ namespace ZeroTicker;
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(TickerConfig))]
 [JsonSerializable(typeof(RssOutput))]
+[JsonSerializable(typeof(RssSource))]
 internal partial class TickerJsonContext : JsonSerializerContext { }
 
 public record RssOutput
@@ -22,6 +23,7 @@ public record RssSource
 {
     public string Url { get; init; } = "";
     public string? Separator { get; init; }
+    public bool? Enabled { get; init; } = true;
 }
 
 public record TickerConfig

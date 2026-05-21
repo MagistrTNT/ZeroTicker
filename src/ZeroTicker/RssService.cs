@@ -41,6 +41,7 @@ public static class RssService
 
         foreach (var src in sources)
         {
+            if (src.Enabled == false) continue;
             var url = src.Url;
             var sep = src.Separator ?? defaultSeparator;
 

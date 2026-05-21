@@ -32,7 +32,7 @@ public static class Worker
 
                 await FilePublisher.WriteAtomicallyAsync(config.OutputPath, js, ct);
                 Console.WriteLine("[{0:HH:mm:ss}] Published {1} characters from {2} sources",
-                    text.Length, sources.Length);
+                    now, text.Length, sources.Length);
             }
             catch (OperationCanceledException)
             {
