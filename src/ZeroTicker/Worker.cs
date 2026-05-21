@@ -17,21 +17,22 @@ public static class Worker
             {
                 config = TickerConfig.Load(configPath);
 
-                var items = await RssService.FetchAllAsync(config.RssUrls, config.MaxPerSource, config.Separator, config.MaxAgeMinutes, ct);
+                var (text, sources) = await RssService.FetchAllAsync(
+                    config.RssSources, config.Separator, config.MaxPerSource, config.MaxAgeMinutes, ct);
 
                 var output = new RssOutput
                 {
-                    Text = string.Concat(items.Select(i => config.Separator + i.Title)),
+                    Text = text,
                     Timestamp = now.ToString("O"),
-                    Sources = items.Select(i => i.Source).Distinct().ToArray()
+                    Sources = sources
                 };
 
                 var js = "window.rssData = " +
                     JsonSerializer.Serialize(output, TickerJsonContext.Default.RssOutput) + ";";
 
                 await FilePublisher.WriteAtomicallyAsync(config.OutputPath, js, ct);
-                Console.WriteLine("[{0:HH:mm:ss}] Published {1} headlines from {2} sources",
-                    now, items.Count, output.Sources.Length);
+                Console.WriteLine("[{0:HH:mm:ss}] Published {1} characters from {2} sources",
+                    text.Length, sources.Length);
             }
             catch (OperationCanceledException)
             {

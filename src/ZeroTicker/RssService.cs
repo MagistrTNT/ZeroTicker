@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -31,14 +32,18 @@ public static class RssService
         return null;
     }
 
-    public static async Task<List<(string Title, string Source)>> FetchAllAsync(
-        string[] urls, int maxItems, string separator, int maxAgeMinutes, CancellationToken ct)
+    public static async Task<(string Text, string[] Sources)> FetchAllAsync(
+        RssSource[] sources, string defaultSeparator, int maxItems, int maxAgeMinutes, CancellationToken ct)
     {
-        var headlines = new List<(string Title, string Source)>();
+        var sb = new StringBuilder();
+        var sourceNames = new List<string>();
         var cutoff = maxAgeMinutes > 0 ? DateTimeOffset.UtcNow - TimeSpan.FromMinutes(maxAgeMinutes) : (DateTimeOffset?)null;
 
-        foreach (var url in urls)
+        foreach (var src in sources)
         {
+            var url = src.Url;
+            var sep = src.Separator ?? defaultSeparator;
+
             try
             {
                 var xml = await Client.GetStringAsync(url, ct);
@@ -48,6 +53,9 @@ public static class RssService
                 var ns = root.Name.Namespace;
                 var sourceName = doc.Descendants(ns + "channel")
                     .Elements(ns + "title").FirstOrDefault()?.Value ?? url;
+
+                if (!sourceNames.Contains(sourceName))
+                    sourceNames.Add(sourceName);
 
                 var firstTitle = "";
                 var feedCount = 0;
@@ -69,7 +77,8 @@ public static class RssService
                         }
                     }
 
-                    headlines.Add((title, sourceName));
+                    sb.Append(sep);
+                    sb.Append(title);
                     if (feedCount == 0) firstTitle = title;
                     feedCount++;
                 }
@@ -78,7 +87,7 @@ public static class RssService
                 Console.WriteLine("[{0:HH:mm:ss}] {1}: {2} items", DateTime.Now, sourceName, feedCount);
                 if (ageSkipped > 0)
                     Console.WriteLine("   ({0} filtered by age)", ageSkipped);
-                Console.WriteLine("   {0} {1}", separator, truncated);
+                Console.WriteLine("   {0} {1}", sep, truncated);
             }
             catch (HttpRequestException ex)
             {
@@ -94,6 +103,6 @@ public static class RssService
             }
         }
 
-        return headlines;
+        return (sb.ToString(), sourceNames.ToArray());
     }
 }
