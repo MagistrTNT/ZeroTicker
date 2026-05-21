@@ -6,6 +6,7 @@ namespace ZeroTicker;
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(TickerConfig))]
 [JsonSerializable(typeof(RssOutput))]
+[JsonSerializable(typeof(RssSource))]
 internal partial class TickerJsonContext : JsonSerializerContext { }
 
 public record RssOutput
@@ -18,12 +19,20 @@ public record RssOutput
     public string[] Sources { get; init; } = [];
 }
 
+public record RssSource
+{
+    public string Url { get; init; } = "";
+    public string? Separator { get; init; }
+    public bool? Enabled { get; init; } = true;
+}
+
 public record TickerConfig
 {
-    public string[] RssUrls { get; init; } = [];
+    public RssSource[] RssSources { get; init; } = [];
     public int IntervalMinutes { get; init; } = 10;
     public int MaxPerSource { get; init; } = 15;
-    public string Separator { get; init; } = " ⛤ ";
+    public int MaxAgeMinutes { get; init; } = 0;
+    public string Separator { get; init; } = " | ";
     public string OutputPath { get; init; } = "news.js";
 
     public static TickerConfig Load(string path)

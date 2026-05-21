@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -16,13 +17,34 @@ public static class RssService
         Client.DefaultRequestHeaders.UserAgent.ParseAdd("ZeroTicker/1.0");
     }
 
-    public static async Task<List<(string Title, string Source)>> FetchAllAsync(
-        string[] urls, int maxItems, string separator, CancellationToken ct)
-    {
-        var headlines = new List<(string Title, string Source)>();
+    private static readonly XNamespace DcNs = "http://purl.org/dc/elements/1.1/";
 
-        foreach (var url in urls)
+    private static DateTimeOffset? TryParsePubDate(XElement item, XNamespace ns)
+    {
+        var pubDateStr = item.Element(ns + "pubDate")?.Value;
+        if (pubDateStr is not null && DateTimeOffset.TryParse(pubDateStr, out var d))
+            return d;
+
+        var dcDateStr = item.Element(DcNs + "date")?.Value;
+        if (dcDateStr is not null && DateTimeOffset.TryParse(dcDateStr, out d))
+            return d;
+
+        return null;
+    }
+
+    public static async Task<(string Text, string[] Sources)> FetchAllAsync(
+        RssSource[] sources, string defaultSeparator, int maxItems, int maxAgeMinutes, CancellationToken ct)
+    {
+        var sb = new StringBuilder();
+        var sourceNames = new List<string>();
+        var cutoff = maxAgeMinutes > 0 ? DateTimeOffset.UtcNow - TimeSpan.FromMinutes(maxAgeMinutes) : (DateTimeOffset?)null;
+
+        foreach (var src in sources)
         {
+            if (src.Enabled == false) continue;
+            var url = src.Url;
+            var sep = src.Separator ?? defaultSeparator;
+
             try
             {
                 var xml = await Client.GetStringAsync(url, ct);
@@ -33,24 +55,40 @@ public static class RssService
                 var sourceName = doc.Descendants(ns + "channel")
                     .Elements(ns + "title").FirstOrDefault()?.Value ?? url;
 
+                if (!sourceNames.Contains(sourceName))
+                    sourceNames.Add(sourceName);
+
                 var firstTitle = "";
                 var feedCount = 0;
+                var ageSkipped = 0;
                 foreach (var item in doc.Descendants(ns + "item"))
                 {
                     if (feedCount >= maxItems) break;
                     var title = WebUtility.HtmlDecode(
                         item.Element(ns + "title")?.Value?.Trim());
-                    if (!string.IsNullOrEmpty(title))
+                    if (string.IsNullOrEmpty(title)) continue;
+
+                    if (cutoff is not null)
                     {
-                        headlines.Add((title, sourceName));
-                        if (feedCount == 0) firstTitle = title;
-                        feedCount++;
+                        var pubDate = TryParsePubDate(item, ns);
+                        if (pubDate is null || pubDate < cutoff)
+                        {
+                            ageSkipped++;
+                            continue;
+                        }
                     }
+
+                    sb.Append(sep);
+                    sb.Append(title);
+                    if (feedCount == 0) firstTitle = title;
+                    feedCount++;
                 }
 
                 var truncated = firstTitle.Length <= 80 ? firstTitle : firstTitle[..77] + "...";
                 Console.WriteLine("[{0:HH:mm:ss}] {1}: {2} items", DateTime.Now, sourceName, feedCount);
-                Console.WriteLine("   {0} {1}", separator, truncated);
+                if (ageSkipped > 0)
+                    Console.WriteLine("   ({0} filtered by age)", ageSkipped);
+                Console.WriteLine("   {0} {1}", sep, truncated);
             }
             catch (HttpRequestException ex)
             {
@@ -66,6 +104,6 @@ public static class RssService
             }
         }
 
-        return headlines;
+        return (sb.ToString(), sourceNames.ToArray());
     }
 }
